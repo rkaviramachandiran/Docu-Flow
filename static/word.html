@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuFlow - Professional Word Converter</title>
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-mode="docx">
+    <!-- Background Animation -->
+    <div class="background-wrapper">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="nav-container" style="justify-content: space-between;">
+            <div class="logo">
+                <img src="/static/logo.png" alt="DocuFlow Logo" style="height: 48px; width: 48px; border-radius: 50%; object-fit: cover; margin-right: 14px;">
+                <span style="font-weight: 700; color: var(--text-dark); letter-spacing: -0.5px;">Docu</span><span style="font-weight: 400; color: var(--primary-indigo);">Flow</span>
+            </div>
+            <div class="nav-links" style="display: flex; gap: 30px; align-items: center;">
+                <a href="/" class="nav-link" style="color: var(--text-muted); font-weight: 500; text-decoration: none; transition: color 0.2s;">PDF Converter</a>
+                <a href="/word" class="nav-link active" style="color: var(--primary-indigo); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--primary-indigo); padding: 5px 0;">Word Converter</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace -->
+    <main class="workspace" id="workspace">
+        
+        <!-- Step 1: Upload (Uploader View) -->
+        <div class="tool-view" id="upload-view">
+            <h1 class="tool-title">Editable Word Conversion</h1>
+            <h2 class="tool-subtitle">Transform your PDFs and documents into fully editable Word files with zero layout loss.</h2>
+            
+            <div class="uploader-container" id="drop-zone">
+                <input type="file" id="file-input" accept=".doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt,.pdf" multiple hidden>
+                
+                <div class="upload-icon-wrapper">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                
+                <button class="btn-massive btn-gradient" id="select-files-btn">
+                    <span>Select Files</span>
+                </button>
+                <p class="drop-text">or drop your documents here</p>
+                
+                <div class="format-badges" style="flex-wrap: wrap; justify-content: center;">
+                    <span class="badge word"><i class="fa-solid fa-file-word"></i> Word</span>
+                    <span class="badge excel"><i class="fa-solid fa-file-excel"></i> Excel</span>
+                    <span class="badge image"><i class="fa-solid fa-file-image"></i> Image</span>
+                    <span class="badge text"><i class="fa-solid fa-file-lines"></i> Text</span>
+                    <span class="badge pdf"><i class="fa-solid fa-file-pdf"></i> PDF</span>
+                </div>
+            </div>
+            
+            <div class="trust-indicators">
+                <p>Trusted by professionals worldwide for editable document conversion.</p>
+            </div>
+        </div>
+
+        <!-- Step 2: Preview and Convert (Editor View) -->
+        <div class="editor-view hidden" id="editor-view">
+            <!-- Left side: File Thumbnails -->
+            <div class="file-preview-area" id="file-preview-area">
+                <!-- File cards will be generated dynamically -->
+            </div>
+
+            <!-- Right side: Sidebar Actions -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h3>Conversion Settings</h3>
+                </div>
+                <div class="sidebar-body" style="display: flex; flex-direction: column; gap: 24px;">
+                    <button class="btn-outline btn-full" id="add-more-files-btn" style="border-radius: var(--radius-md); font-weight: 500; cursor: pointer; padding: 12px;">
+                        <i class="fa-solid fa-plus" style="margin-right: 8px;"></i> Add More Files
+                    </button>
+                </div>
+                
+                <!-- Status Overlay (Hidden by default) -->
+                <div class="converting-overlay hidden" id="converting-overlay">
+                    <div class="spinner"></div>
+                    <p>Generating Word Document...</p>
+                </div>
+                
+                <!-- Error Overlay (Hidden by default) -->
+                <div class="error-overlay hidden" id="error-overlay">
+                    <div class="error-icon-wrapper">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                    </div>
+                    <p id="error-text">We encountered an issue processing your file.</p>
+                    <button class="btn-small btn-outline" id="retry-btn">Try again</button>
+                </div>
+
+                <div class="sidebar-footer">
+                    <button class="btn-massive btn-gradient btn-full" id="convert-btn">
+                        <span>Convert to Word</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Success View -->
+        <div class="success-view hidden" id="success-view">
+            <div class="success-icon-wrapper">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h1 class="success-title">Your Word document is ready!</h1>
+            <p class="success-subtitle">The document was successfully converted and formatted.</p>
+            
+            <div class="download-container" id="download-list" style="flex-direction: column; width: 100%; max-width: 500px; gap: 16px; margin-bottom: 40px;">
+                <!-- Dynamically generated download buttons go here -->
+            </div>
+            
+            <button class="start-over-link" id="start-over-btn">
+                <i class="fa-solid fa-rotate-left"></i> Convert another file
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-bottom">
+            <div class="footer-logo">
+                <img src="/static/logo.png" alt="DocuFlow Logo" style="height: 32px; width: 32px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 10px;">
+                <span style="font-weight: 700; color: var(--text-dark); margin-left: 0;">DocuFlow</span>
+            </div>
+            <p>&copy; 2026 DocuFlow. Built for seamless productivity.</p>
+
+        </div>
+    </footer>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
