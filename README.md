@@ -50,4 +50,4 @@ DocuFlow is a sleek, modern, and high-performance document conversion applicatio
 DocuFlow was designed with a focus on **Visual Excellence** and **Minimalism**. Every interaction is smoothed with micro-animations and a curated dark-slate color palette to provide a premium user experience.
 
 ---
-Built with ❤️ using Antigravity AI.
+> ### **Built with ❤️ using [Antigravity AI](https://github.com/google-deepmind/antigravity)**
