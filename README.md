@@ -45,9 +45,15 @@ DocuFlow is a sleek, modern, and high-performance document conversion applicatio
    ```
    *The app will be available at `http://127.0.0.1:8000`*
 
-## 🎨 Design Philosophy
+## 🤖 AI & IDE
 
-DocuFlow was designed with a focus on **Visual Excellence** and **Minimalism**. Every interaction is smoothed with micro-animations and a curated dark-slate color palette to provide a premium user experience.
+- **IDE:** Visual Studio Code
+- **AI Assistant:** [Antigravity AI](https://github.com/google-deepmind/antigravity) (Google DeepMind)
+- **Role:** Antigravity AI handled the end-to-end architecture, UI/UX design, and backend logic implementation.
 
 ---
-> ### **Built with ❤️ using [Antigravity AI](https://github.com/google-deepmind/antigravity)**
+
+<div align="center">
+  <h3><b>Built with ❤️ using [Antigravity AI](https://github.com/google-deepmind/antigravity)</b></h3>
+  <p><i>The future of agentic coding.</i></p>
+</div>
