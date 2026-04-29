@@ -48,12 +48,12 @@ DocuFlow is a sleek, modern, and high-performance document conversion applicatio
 ## 🤖 AI & IDE
 
 - **IDE:** Visual Studio Code
-- **AI Assistant:** [Antigravity AI](https://github.com/google-deepmind/antigravity) (Google DeepMind)
+- **AI Assistant:** [Antigravity AI](https:/google-deepmind/antigravity) (Google DeepMind)
 - **Role:** Antigravity AI handled the end-to-end architecture, UI/UX design, and backend logic implementation.
 
 ---
 
 <div align="center">
-  <h3><b>Built with ❤️ using [Antigravity AI](https://github.com/google-deepmind/antigravity)</b></h3>
+  <h3><b>Built with ❤️ using [Antigravity AI](https://antigravity.google/)</b></h3>
   <p><i>The future of agentic coding.</i></p>
 </div>
