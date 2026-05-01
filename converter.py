@@ -6,6 +6,7 @@ import time
 import uuid
 import shutil
 import sys
+import subprocess
 from PIL import Image
 from docx import Document
 from pdf2docx import Converter as PDFConverter
@@ -18,6 +19,23 @@ if os.name == 'nt':
         HAS_COM = True
     except ImportError:
         pass
+
+# Check for LibreOffice
+def _check_libreoffice():
+    try:
+        # On Linux, try 'libreoffice' or 'soffice'
+        for cmd in ['libreoffice', 'soffice']:
+            try:
+                subprocess.run([cmd, '--version'], capture_output=True, check=True)
+                return cmd
+            except:
+                continue
+        return None
+    except:
+        return None
+
+LIBREOFFICE_CMD = _check_libreoffice()
+HAS_LIBREOFFICE = LIBREOFFICE_CMD is not None
 
 # Fallback libraries for Linux
 HAS_ASPOSE = False
@@ -108,11 +126,20 @@ def _conversion_worker():
                             doc.SaveAs(abs_out, FileFormat=17) # wdFormatPDF
                         finally:
                             doc.Close(0) # wdDoNotSaveChanges
+                    elif HAS_LIBREOFFICE:
+                        logger.info(f"Converting {ext} to PDF using LibreOffice...")
+                        out_dir = os.path.dirname(abs_out)
+                        # LibreOffice output filename is derived from input filename
+                        subprocess.run([LIBREOFFICE_CMD, '--headless', '--convert-to', 'pdf', abs_in, '--outdir', out_dir], check=True)
+                        # Ensure the output filename matches what we expect
+                        expected_out = os.path.join(out_dir, os.path.splitext(os.path.basename(abs_in))[0] + ".pdf")
+                        if expected_out != abs_out and os.path.exists(expected_out):
+                            shutil.move(expected_out, abs_out)
                     elif HAS_ASPOSE:
                         doc = aw.Document(abs_in)
                         doc.save(abs_out)
                     else:
-                        raise ImportError("No conversion engine available for Word to PDF (Windows COM or Aspose required)")
+                        raise ImportError("No conversion engine available for Word to PDF (Windows COM, LibreOffice, or Aspose required)")
 
                 elif ext in ['.xlsx', '.xls']:
                     if HAS_COM:
@@ -122,11 +149,18 @@ def _conversion_worker():
                             wb.ExportAsFixedFormat(0, abs_out) # xlTypePDF
                         finally:
                             wb.Close(False)
+                    elif HAS_LIBREOFFICE:
+                        logger.info(f"Converting {ext} to PDF using LibreOffice...")
+                        out_dir = os.path.dirname(abs_out)
+                        subprocess.run([LIBREOFFICE_CMD, '--headless', '--convert-to', 'pdf', abs_in, '--outdir', out_dir], check=True)
+                        expected_out = os.path.join(out_dir, os.path.splitext(os.path.basename(abs_in))[0] + ".pdf")
+                        if expected_out != abs_out and os.path.exists(expected_out):
+                            shutil.move(expected_out, abs_out)
                     elif HAS_ASPOSE:
                         workbook = ac.Workbook(abs_in)
                         workbook.save(abs_out, ac.SaveFormat.PDF)
                     else:
-                        raise ImportError("No conversion engine available for Excel to PDF (Windows COM or Aspose required)")
+                        raise ImportError("No conversion engine available for Excel to PDF (Windows COM, LibreOffice, or Aspose required)")
 
                 elif ext in ['.png', '.jpg', '.jpeg']:
                     img = Image.open(abs_in)
