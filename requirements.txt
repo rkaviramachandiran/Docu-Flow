@@ -1,4 +1,10 @@
 fastapi
 uvicorn
 python-multipart
-comtypes
+comtypes; sys_platform == 'win32'
+python-docx
+pdf2docx
+Pillow
+aspose-words
+aspose-cells
+

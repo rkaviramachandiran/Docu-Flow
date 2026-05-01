@@ -1,19 +1,36 @@
 import os
-import comtypes.client
 import logging
 import threading
 import queue
 import time
 import uuid
 import shutil
+import sys
 from PIL import Image
 from docx import Document
 from pdf2docx import Converter as PDFConverter
 
+# Conditional import for Windows-only COM
+HAS_COM = False
+if os.name == 'nt':
+    try:
+        import comtypes.client
+        HAS_COM = True
+    except ImportError:
+        pass
+
+# Fallback libraries for Linux
+HAS_ASPOSE = False
+try:
+    import aspose.words as aw
+    import aspose.cells as ac
+    HAS_ASPOSE = True
+except ImportError:
+    pass
+
 logger = logging.getLogger(__name__)
 
 # Queue for conversion tasks
-# Tuple format: (task_id, input_path, output_path, ext, target_format)
 _conversion_queue = queue.Queue()
 
 # Dictionary to store results
@@ -30,21 +47,23 @@ def _safe_remove(path):
 
 def _conversion_worker():
     logger.info("Starting background conversion worker...")
-    comtypes.CoInitialize()
+    if HAS_COM:
+        comtypes.CoInitialize()
     
     word = None
     excel = None
     
-    try:
-        word = comtypes.client.CreateObject('Word.Application')
-        word.Visible = False
-        word.DisplayAlerts = 0 # wdAlertsNone
-        excel = comtypes.client.CreateObject('Excel.Application')
-        excel.Visible = False
-        excel.DisplayAlerts = False
-        logger.info("Office applications pre-launched successfully.")
-    except Exception as e:
-        logger.warning(f"Could not pre-launch Office apps: {e}")
+    if HAS_COM:
+        try:
+            word = comtypes.client.CreateObject('Word.Application')
+            word.Visible = False
+            word.DisplayAlerts = 0 # wdAlertsNone
+            excel = comtypes.client.CreateObject('Excel.Application')
+            excel.Visible = False
+            excel.DisplayAlerts = False
+            logger.info("Office applications pre-launched successfully.")
+        except Exception as e:
+            logger.warning(f"Could not pre-launch Office apps: {e}")
 
     while True:
         task = _conversion_queue.get()
@@ -76,25 +95,39 @@ def _conversion_worker():
                     doc_obj.save(abs_out)
                 
                 _results[task_id] = {"status": "success"}
-                return # Skip normal logic
+                continue # Use continue instead of return to process next task
 
             abs_in = os.path.abspath(input_path)
 
             if target_format == 'pdf':
                 if ext in ['.docx', '.doc']:
-                    if word is None: word = comtypes.client.CreateObject('Word.Application'); word.Visible = False; word.DisplayAlerts = 0
-                    doc = word.Documents.Open(abs_in, ReadOnly=True)
-                    try:
-                        doc.SaveAs(abs_out, FileFormat=17) # wdFormatPDF
-                    finally:
-                        doc.Close(0) # wdDoNotSaveChanges
+                    if HAS_COM:
+                        if word is None: word = comtypes.client.CreateObject('Word.Application'); word.Visible = False; word.DisplayAlerts = 0
+                        doc = word.Documents.Open(abs_in, ReadOnly=True)
+                        try:
+                            doc.SaveAs(abs_out, FileFormat=17) # wdFormatPDF
+                        finally:
+                            doc.Close(0) # wdDoNotSaveChanges
+                    elif HAS_ASPOSE:
+                        doc = aw.Document(abs_in)
+                        doc.save(abs_out)
+                    else:
+                        raise ImportError("No conversion engine available for Word to PDF (Windows COM or Aspose required)")
+
                 elif ext in ['.xlsx', '.xls']:
-                    if excel is None: excel = comtypes.client.CreateObject('Excel.Application'); excel.Visible = False; excel.DisplayAlerts = False
-                    wb = excel.Workbooks.Open(abs_in, ReadOnly=True)
-                    try:
-                        wb.ExportAsFixedFormat(0, abs_out) # xlTypePDF
-                    finally:
-                        wb.Close(False)
+                    if HAS_COM:
+                        if excel is None: excel = comtypes.client.CreateObject('Excel.Application'); excel.Visible = False; excel.DisplayAlerts = False
+                        wb = excel.Workbooks.Open(abs_in, ReadOnly=True)
+                        try:
+                            wb.ExportAsFixedFormat(0, abs_out) # xlTypePDF
+                        finally:
+                            wb.Close(False)
+                    elif HAS_ASPOSE:
+                        workbook = ac.Workbook(abs_in)
+                        workbook.save(abs_out, ac.SaveFormat.PDF)
+                    else:
+                        raise ImportError("No conversion engine available for Excel to PDF (Windows COM or Aspose required)")
+
                 elif ext in ['.png', '.jpg', '.jpeg']:
                     img = Image.open(abs_in)
                     try:
@@ -109,12 +142,17 @@ def _conversion_worker():
                         for line in f: doc_obj.add_paragraph(line.strip())
                     doc_obj.save(os.path.abspath(temp_docx))
                     
-                    if word is None: word = comtypes.client.CreateObject('Word.Application'); word.Visible = False; word.DisplayAlerts = 0
-                    wdoc = word.Documents.Open(os.path.abspath(temp_docx), ReadOnly=True)
-                    try:
-                        wdoc.SaveAs(abs_out, FileFormat=17)
-                    finally:
-                        wdoc.Close(0)
+                    if HAS_COM:
+                        if word is None: word = comtypes.client.CreateObject('Word.Application'); word.Visible = False; word.DisplayAlerts = 0
+                        wdoc = word.Documents.Open(os.path.abspath(temp_docx), ReadOnly=True)
+                        try:
+                            wdoc.SaveAs(abs_out, FileFormat=17)
+                        finally:
+                            wdoc.Close(0)
+                    elif HAS_ASPOSE:
+                        doc = aw.Document(os.path.abspath(temp_docx))
+                        doc.save(abs_out)
+                    
                     _safe_remove(temp_docx)
                 elif ext == '.pdf':
                     shutil.copy2(abs_in, abs_out)
@@ -126,12 +164,16 @@ def _conversion_worker():
                     if ext == '.docx':
                         shutil.copy2(abs_in, abs_out)
                     else: # .doc to .docx
-                        if word is None: word = comtypes.client.CreateObject('Word.Application'); word.Visible = False; word.DisplayAlerts = 0
-                        doc = word.Documents.Open(abs_in, ReadOnly=True)
-                        try:
-                            doc.SaveAs(abs_out, FileFormat=16) # wdFormatXMLDocument
-                        finally:
-                            doc.Close(0)
+                        if HAS_COM:
+                            if word is None: word = comtypes.client.CreateObject('Word.Application'); word.Visible = False; word.DisplayAlerts = 0
+                            doc = word.Documents.Open(abs_in, ReadOnly=True)
+                            try:
+                                doc.SaveAs(abs_out, FileFormat=16) # wdFormatXMLDocument
+                            finally:
+                                doc.Close(0)
+                        elif HAS_ASPOSE:
+                            doc = aw.Document(abs_in)
+                            doc.save(abs_out)
                 elif ext == '.pdf':
                     cv = PDFConverter(abs_in)
                     try:
@@ -163,7 +205,8 @@ def _conversion_worker():
     if excel:
         try: excel.Quit()
         except: pass
-    comtypes.CoUninitialize()
+    if HAS_COM:
+        comtypes.CoUninitialize()
 
 _worker_thread = threading.Thread(target=_conversion_worker, daemon=True)
 _worker_thread.start()

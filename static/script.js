@@ -53,28 +53,45 @@ document.addEventListener('DOMContentLoaded', () => {
         fileInput.value = '';
         fileInput.click();
     });
-    
+
     if (addMoreFilesBtn) {
         addMoreFilesBtn.addEventListener('click', () => {
             fileInput.value = '';
             fileInput.click();
         });
     }
-    
-    fileInput.addEventListener('change', function() {
+
+    fileInput.addEventListener('change', function () {
         handleFiles(this.files);
+    });
+
+    // --- Format Selection ---
+    document.querySelectorAll('.format-opt').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.format-opt').forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'transparent';
+                b.style.borderColor = 'var(--border-color)';
+                b.style.color = 'var(--text-muted)';
+            });
+            btn.classList.add('active');
+            btn.style.background = 'rgba(79, 70, 229, 0.1)';
+            btn.style.borderColor = 'var(--primary-indigo)';
+            btn.style.color = 'var(--text-dark)';
+            selectedOutputFormat = btn.getAttribute('data-value');
+        });
     });
 
     function handleFiles(files) {
         if (files.length === 0) return;
-        
+
         const validExtensions = ['.doc', '.docx', '.xls', '.xlsx', '.png', '.jpg', '.jpeg', '.txt', '.pdf'];
-        
+
         const newFiles = Array.from(files).filter(file => {
             const fileNameStr = file.name.toLowerCase();
             return validExtensions.some(ext => fileNameStr.endsWith(ext));
         });
-        
+
         if (newFiles.length === 0) {
             alert("Invalid file type(s). Please upload Word, Excel, Images, Text or PDF documents.");
             return;
@@ -88,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- View Transitions ---
     function showEditorView() {
         filePreviewArea.innerHTML = ''; // Clear
-        
+
         currentFiles.forEach((file, index) => {
             const ext = file.name.split('.').pop().toLowerCase();
             const isWord = ext.startsWith('doc');
@@ -96,10 +113,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const isImage = ['png', 'jpg', 'jpeg'].includes(ext);
             const isText = ext === 'txt';
             const isPdf = ext === 'pdf';
-            
+
             let iconClass = 'fa-file-pdf';
             let iconColor = '#ef4444'; // Red for PDF
-            
+
             if (isWord) {
                 iconClass = 'fa-file-word';
                 iconColor = '#4f46e5';
@@ -113,10 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 iconClass = 'fa-file-lines';
                 iconColor = '#64748b';
             }
-            
+
             const card = document.createElement('div');
             card.className = 'file-card';
-            
+
             card.innerHTML = `
                 <div class="file-card-preview">
                     <i class="fa-solid ${iconClass}" style="color: ${iconColor}; font-size: 80px;"></i>
@@ -146,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         uploadView.classList.add('hidden');
         editorView.classList.remove('hidden');
         successView.classList.add('hidden');
-        
+
         // Reset Overlays
         convertingOverlay.classList.add('hidden');
         errorOverlay.classList.add('hidden');
@@ -157,10 +174,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function showSuccessView(files) {
         editorView.classList.add('hidden');
         successView.classList.remove('hidden');
-        
+
         const successTitle = document.querySelector('.success-title');
         const isTargetWord = selectedOutputFormat === 'docx';
-        
+
         if (files.length > 1) {
             successTitle.textContent = isTargetWord ? "Your Word documents are ready!" : "Your PDFs are ready!";
         } else {
@@ -193,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentFiles = [];
         convertedFiles = [];
         fileInput.value = '';
-        
+
         uploadView.classList.remove('hidden');
         editorView.classList.add('hidden');
         successView.classList.add('hidden');
@@ -210,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (overlayText) {
             overlayText.textContent = selectedOutputFormat === 'docx' ? 'Generating Word Document...' : 'Generating PDF...';
         }
-        
+
         errorOverlay.classList.add('hidden');
         convertBtn.disabled = true;
         convertBtn.style.opacity = '0.5';
@@ -236,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             convertedFiles = data.files;
             showSuccessView(convertedFiles);
-            
+
         } catch (error) {
             convertingOverlay.classList.add('hidden');
             errorOverlay.classList.remove('hidden');
