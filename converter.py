@@ -22,17 +22,11 @@ if os.name == 'nt':
 
 # Check for LibreOffice
 def _check_libreoffice():
-    try:
-        # On Linux, try 'libreoffice' or 'soffice'
-        for cmd in ['libreoffice', 'soffice']:
-            try:
-                subprocess.run([cmd, '--version'], capture_output=True, check=True)
-                return cmd
-            except:
-                continue
-        return None
-    except:
-        return None
+    import shutil
+    for cmd in ['libreoffice', 'soffice']:
+        if shutil.which(cmd):
+            return cmd
+    return None
 
 LIBREOFFICE_CMD = _check_libreoffice()
 HAS_LIBREOFFICE = LIBREOFFICE_CMD is not None
@@ -183,9 +177,18 @@ def _conversion_worker():
                             wdoc.SaveAs(abs_out, FileFormat=17)
                         finally:
                             wdoc.Close(0)
+                    elif HAS_LIBREOFFICE:
+                        logger.info("Converting text (via docx) to PDF using LibreOffice...")
+                        out_dir = os.path.dirname(abs_out)
+                        subprocess.run([LIBREOFFICE_CMD, '--headless', '--convert-to', 'pdf', os.path.abspath(temp_docx), '--outdir', out_dir], check=True)
+                        expected_out = os.path.join(out_dir, os.path.splitext(os.path.basename(temp_docx))[0] + ".pdf")
+                        if expected_out != abs_out and os.path.exists(expected_out):
+                            shutil.move(expected_out, abs_out)
                     elif HAS_ASPOSE:
                         doc = aw.Document(os.path.abspath(temp_docx))
                         doc.save(abs_out)
+                    else:
+                        raise ImportError("No conversion engine available for Text to PDF (Windows COM, LibreOffice, or Aspose required)")
                     
                     _safe_remove(temp_docx)
                 elif ext == '.pdf':
